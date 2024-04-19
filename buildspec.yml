@@ -1,0 +1,36 @@
+version: 0.2
+env: # Create the environment
+ variables:
+ ECR_REPO: 773864031071.dkr.ecr.us-east-1.amazonaws.com/repositoryserver
+ ECR_REGION: us-east-1
+ CONTAINER_NAME: catalog_container
+phases:
+ install: # Install runtime
+ runtime-versions:
+ nodejs: 16
+ docker: 20
+commands: 
+- curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+- sudo apt-get update && sudo apt-get install -y nodejs
+- echo "Installing Docker..."
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo apt-get update && sudo apt-get install -y docker-ce
+ pre_build: # You must use this phase for installing dependencies and login into ECR
+ commands: # Run your pre-build script here 
+ - echo "Install Dependencies and login into ECR"
+ build: # In This phase you must Run Unit testing and Build an image from Dockerfile
+ commands:
+ - echo "Run unit testing and build docker image"
+ post_build: # In this phase you must push the image to ECR and create an image definition
+ commands: # Run your post-build script here 
+ - echo "push the image to ECR.."
+ - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME ${ECR_REPO}:latest > imagedefinitions.json
+ - echo "build complete.."
+reports: # Report file
+ test-report:
+ files:
+ - 'report/test-result.xml'
+ file-format: JUNITXML
+artifacts: # Output artifact will generate build
+ files:
+ - imagedefinitions.json
